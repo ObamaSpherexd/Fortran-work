@@ -21,7 +21,7 @@ program convection_solver_gnuplot
 
     h = l / real(N, dp)
     tau = r * h / c
-    T = 2_dp * l / c
+    T = 0.2_dp * l / c
     Nt = int(T / tau)
     if (Nt < 1) Nt = 1
 
