@@ -17,7 +17,7 @@ program convection_solver_gnuplot
     r = 0.8_dp
     
     print_step = 10 
-    save_step = 2  
+    save_step = 5  
 
     h = l / real(N, dp)
     tau = r * h / c
