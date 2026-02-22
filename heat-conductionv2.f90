@@ -37,7 +37,7 @@ program heat_conduction
 
    ! init params
    print_step = 10
-   save_step = 2
+   save_step = 5
    h = l / real(N, dp)
 
    ! Tau eval
