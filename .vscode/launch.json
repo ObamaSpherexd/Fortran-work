@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Отладка Fortran",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}/${fileBasenameNoExtension}",
+      "args": [],
+      "cwd": "${fileDirname}",
+      "preLaunchTask": "Собрать и запустить",
+      "MIMode": "gdb",
+      "setupCommands": [
+        { "description": "Включить pretty-printing", "text": "-enable-pretty-printing" }
+      ]
+    }
+  ]
+}
