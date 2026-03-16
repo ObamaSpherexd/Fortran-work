@@ -187,24 +187,24 @@ contains
       real(dp), intent(in) :: x
       real(dp) :: res
       !res = c * (l - x) / l
-      !res=x/l
-      res=abs(cos(3.14_dp*2.0_dp*(x/(l**3))))**5
+      res=x/l
+      !res=abs(cos(3.14_dp*2.0_dp*(x/(l**3))))**5
    end function u0
 
    function phi1(t) result(res)
       real(dp), intent(in) :: t
       real(dp) :: res
       !res = p1 * (1.0_dp - exp(-b_param * t))
-      !res=1
-      res=p1*(1.0_dp-exp(-b_param*t))
+      res=1
+      !res=p1*(1.0_dp-exp(-b_param*t))
    end function phi1
 
    function phi2(t) result(res)
       real(dp), intent(in) :: t
       real(dp) :: res
       !res = p2
-      !res=0
-      res=p2*exp(-b_param*t)
+      res=0
+      !res=p2*exp(-b_param*t)
    end function phi2
 
    function f_source(x, t) result(res)
@@ -215,12 +215,12 @@ contains
       !else
       !   res = 0.0_dp
       !end if
-      if (beta1<=x .and. x<=beta2) then
-         res=f0*(1.0_dp-exp(-x*t))
-      else
-         res=0.0_dp
-      end if
-      !res=0
+      !if (beta1<=x .and. x<=beta2) then
+      !   res=f0*(1.0_dp-exp(-x*t))
+      !else
+      !   res=0.0_dp
+      !end if
+      res=0
    end function f_source
 
 end program heat_conduction
