@@ -6,13 +6,13 @@ program heat_rectangle
 
     ! task params
 
-    real(dp), parameter :: lx=1.0_dp
-    real(dp), parameter :: ly=1.0_dp
+    real(dp), parameter :: lx=2.0_dp
+    real(dp), parameter :: ly=2.0_dp
     real(dp), parameter :: T_total=5.0_dp
     real(dp), parameter :: a=1.0_dp
 
     ! grid params
-    integer :: N=50,M=50,kmax=500, out_step=50
+    integer :: N=50,M=50,kmax=500, out_step=5, frame_count
 
     ! counters
     integer :: i,j,k,out_count
@@ -94,6 +94,12 @@ program heat_rectangle
     print '(F10.4, 4F15.6)', 0.0_dp, u(0, 0), u(N/2, M/2), u(N, 0), u(N, M)
 
     ! ==================================================================
+    ! ANIMATION: Save initial frame (t=0)
+    ! ==================================================================
+    frame_count = 0
+    call save_frame(frame_count, 0.0_dp, x, y, u, N, M)
+
+    ! ==================================================================
     ! Time stepping (explicit scheme 16.4)
     ! ==================================================================
     t_current = 0.0_dp
@@ -136,6 +142,11 @@ program heat_rectangle
         if (mod(k, out_step) == 0 .or. k == kmax) then
             out_count = out_count + 1
             print '(F10.4, 4F15.6)', t_current, u(0, 0), u(N/2, M/2), u(N, 0), u(N, M)
+
+            ! ANIMATION: Save frame for heatmap
+            frame_count = frame_count + 1
+            call save_frame(frame_count, t_current, x, y, u, N, M)
+
         end if
     end do
     
@@ -158,11 +169,19 @@ program heat_rectangle
     ! Generate gnuplot script for HEATMAP
     call create_heatmap_script()
 
+    ! Generate gnuplot script for ANIMATION
+    call create_animation_script(frame_count)
+
     print *, ''
     print *, '=== Results saved ==='
     print *, 'Heatmap data: heatmap_data.dat'
     print *, 'Gnuplot script: plot_heatmap.gnu'
-    print *, 'To view: gnuplot -persist plot_heatmap.gnu'
+    print *, 'Animation frames: frame_*.dat (', frame_count+1, ' frames)'
+    print *, 'Animation script: plot_animation.gnu'
+    print *, 'To view static: gnuplot -persist plot_heatmap.gnu'
+    print *, 'To create animation: gnuplot plot_animation.gnu'
+    print *, 'To view GIF (if convert available): animate_heatmap.sh'
+
 
     ! Deallocate
     deallocate(u, u_new, x, y)
@@ -172,7 +191,7 @@ contains
     function eta(z) result(res)
         real(dp), intent(in) :: z
         integer :: res
-        if (z>=0.0_dp) then
+        if (z>=0.0_dp) then         
             res=1
         else 
             res=0
@@ -182,9 +201,9 @@ contains
     function u0(x,y) result(res)
         real(dp), intent(in) :: x,y
         real(dp) :: res
-        ! res=c(1)*eta(x-alpha(0))*eta(beta(0)-x) &
-        ! *eta(y-mu(0))*eta(nu(0)-y)
-        res=1
+        res=c(1)*eta(x-alpha(0))*eta(beta(0)-x) &
+        *eta(y-mu(0))*eta(nu(0)-y)
+        !res=1
         
     end function u0
 
@@ -192,22 +211,48 @@ contains
         integer, intent(in) :: i
         real(dp), intent(in) :: var,t
         real(dp) :: res
-        res=0
-        ! if (i==1 .or. i==2) then
-        !     res=c(i)*eta(var-mu(i))*eta(nu(i)-var) &
-        !     *(1.0_dp-exp(-gamma(i)*t))
-        ! else if (i==3 .or. i==4) then
-        !     res=c(i)*eta(var-alpha(i))*eta(beta(i)-var) &
-        !     *(1.0_dp-exp(-gamma(i)*t))
-        ! end if
+        !res=0
+        if (i==1 .or. i==2) then
+            res=c(i)*eta(var-mu(i))*eta(nu(i)-var) &
+            *(1.0_dp-exp(-gamma(i)*t))
+        else if (i==3 .or. i==4) then
+            res=c(i)*eta(var-alpha(i))*eta(beta(i)-var) &
+            *(1.0_dp-exp(-gamma(i)*t))
+        end if
     end function psi
 
     function f(x,y,t) result(res)
         real(dp), intent(in) :: x,y,t
         real(dp) :: res
-        !res=c(5)*u0(x,y)*(1.0_dp-exp(-gamma(5)))
-        res=32*(x*(1-x)+y*(1-y))
+        res=c(5)*u0(x,y)*(1.0_dp-exp(-gamma(5)))
+        !res=32*(x*(1-x)+y*(1-y))
     end function f
+
+    ! 
+    ! ANIMATION: Save single frame to file
+    ! 
+    subroutine save_frame(frame_num, t_val, x_arr, y_arr, u_arr, Nx, My)
+        integer, intent(in) :: frame_num, Nx, My
+        real(dp), intent(in) :: t_val
+        real(dp), intent(in) :: x_arr(0:Nx), y_arr(0:My), u_arr(0:Nx,0:My)
+        integer :: ii, jj
+        character(len=50) :: filename
+        
+        write(filename, '(A,I3.3,A)') 'frame_', frame_num, '.dat'
+        
+        open(unit=30, file=filename, status='replace')
+        write(30, *) '# Frame ', frame_num, ' - Time t = ', t_val
+        write(30, *) '# x y u(x,y)'
+        
+        do ii = 0, My
+            do jj = 0, Nx
+                write(30, '(3F15.6)') x_arr(jj), y_arr(ii), u_arr(jj, ii)
+            end do
+            write(30, *) ''  ! separator for gnuplot pm3d
+        end do
+        
+        close(30)
+    end subroutine save_frame
  
 
     ! ==================================================================
@@ -222,7 +267,7 @@ contains
         
         write(unit_gnu, *) '# Gnuplot script for 2D heatmap'
         write(unit_gnu, *) 'set terminal pngcairo size 1200,1000 enhanced font "Verdana,11"'
-        write(unit_gnu, *) 'set output "heatmap.png"'
+        write(unit_gnu, *) 'set output "heatmap_1.png"'
         write(unit_gnu, *) ''
         write(unit_gnu, *) 'set title "Heat Equation in Rectangle\\nAssignment #16" font ",16"'
         write(unit_gnu, *) 'set xlabel "x" font ",13"'
@@ -246,9 +291,66 @@ contains
         write(unit_gnu, *) '# Plot'
         write(unit_gnu, *) 'splot "heatmap_data.dat" using 1:2:3 with pm3d title "Temperature"'
         write(unit_gnu, *) ''
-        write(unit_gnu, *) 'print "Heatmap saved to: heatmap.png"'
+        write(unit_gnu, *) 'print "Heatmap saved to: heatmap_1.png"'
         
         close(unit_gnu)
     end subroutine create_heatmap_script
+
+    ! animation
+    subroutine create_animation_script(n_frames)
+        integer, intent(in) :: n_frames
+        integer :: unit_gnu, f
+        character(len=50) :: filename
+        
+        unit_gnu = 21
+        open(unit=unit_gnu, file='plot_animation.gnu', status='replace')
+        
+        write(unit_gnu, *) '# Gnuplot script for animated heatmap'
+        write(unit_gnu, *) 'set terminal pngcairo size 1200,1000 enhanced font "Verdana,11"'
+        write(unit_gnu, *) ''
+        write(unit_gnu, *) 'set title "Heat Equation in Rectangle - Time Evolution\\nAssignment #16" font ",16"'
+        write(unit_gnu, *) 'set xlabel "x" font ",13"'
+        write(unit_gnu, *) 'set ylabel "y" font ",13"'
+        write(unit_gnu, *) ''
+        write(unit_gnu, *) 'set grid front lt 0 lw 0.5 lc rgb "#cccccc"'
+        write(unit_gnu, *) 'set border lw 1.5'
+        write(unit_gnu, *) ''
+        write(unit_gnu, *) '# HEATMAP VIEW (top-down)'
+        write(unit_gnu, *) 'set view map'
+        write(unit_gnu, *) 'set pm3d map'
+        write(unit_gnu, *) ''
+        write(unit_gnu, *) '# Color palette (viridis-like)'
+        write(unit_gnu, *) 'set palette defined (0 "#440154", 0.2 "#3b528b", 0.4 "#21918c", 0.6 "#5ec962", 0.8 "#fde725", 1 "#ffffff")'
+        write(unit_gnu, *) ''
+        write(unit_gnu, *) '# Colorbar'
+        write(unit_gnu, *) 'set cbrange [*:*]'
+        write(unit_gnu, *) 'set colorbox vertical user origin 0.92, 0.15 size 0.03, 0.7'
+        write(unit_gnu, *) 'set cblabel "u(x,y)" font ",11" offset 2,0'
+        write(unit_gnu, *) ''
+        write(unit_gnu, *) '# Animation loop'
+        write(unit_gnu, '(A,I0,A)') 'do for [frame=0:', n_frames, '] {'
+        write(unit_gnu, '(A,I0,A)') '    filename = sprintf("frame_%3.3d.dat", frame)'
+        write(unit_gnu, '(A,I0,A)') '    set output sprintf("anim_frame_%3.3d.png", frame)'
+        write(unit_gnu, *) '    t_label = (frame == 0) ? "t = 0.00" : sprintf("t = %.2f", frame * ', T_total/real(n_frames,dp), ')'
+        write(unit_gnu, *) '    set title sprintf("Heat Equation in Rectangle - Time Evolution\\nt = %.2f s", frame * ', T_total/real(n_frames,dp), ') font ",16"'
+        write(unit_gnu, *) '    splot filename using 1:2:3 with pm3d notitle'
+        write(unit_gnu, *) '}'
+        write(unit_gnu, *) ''
+        write(unit_gnu, *) 'print "Animation frames saved: anim_frame_*.png"'
+        
+        close(unit_gnu)
+
+                
+        ! Create shell script to combine frames into GIF (if ImageMagick available)
+        open(unit=22, file='animate_heatmap.sh', status='replace')
+        write(22, *) '#!/bin/bash'
+        write(22, *) '# Script to create animated GIF from heatmap frames'
+        write(22, *) ''
+        write(22, *) 'echo "Creating animated GIF..."'
+        write(22, '(A,I0,A)') 'convert -delay 20 -loop 0 anim_frame_000.png anim_frame_*.png heat_animation.gif'
+        write(22, *) 'echo "Animation saved: heat_animation.gif"'
+        write(22, *) 'echo "To view: display heat_animation.gif"'
+        close(22)
+    end subroutine create_animation_script
     
 end program heat_rectangle

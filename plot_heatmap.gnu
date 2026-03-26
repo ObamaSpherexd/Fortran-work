@@ -1,6 +1,6 @@
  # Gnuplot script for 2D heatmap
  set terminal pngcairo size 1200,1000 enhanced font "Verdana,11"
- set output "heatmap.png"
+ set output "heatmap_1.png"
  
  set title "Heat Equation in Rectangle\\nAssignment #16" font ",16"
  set xlabel "x" font ",13"
@@ -24,4 +24,4 @@
  # Plot
  splot "heatmap_data.dat" using 1:2:3 with pm3d title "Temperature"
  
- print "Heatmap saved to: heatmap.png"
+ print "Heatmap saved to: heatmap_1.png"
