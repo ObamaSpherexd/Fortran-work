@@ -12,7 +12,7 @@ program heat_rectangle
     real(dp), parameter :: a=1.0_dp
 
     ! grid params
-    integer :: N=50,M=50,kmax=500, out_step=5, frame_count
+    integer :: N=50,M=50,kmax=500, out_step=15, frame_count
 
     ! counters
     integer :: i,j,k,out_count

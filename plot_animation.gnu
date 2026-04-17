@@ -21,11 +21,11 @@
  set cblabel "u(x,y)" font ",11" offset 2,0
  
  # Animation loop
-do for [frame=0:100] {
+do for [frame=0:34] {
     filename = sprintf("frame_%3.3d.dat", frame)
     set output sprintf("anim_frame_%3.3d.png", frame)
-     t_label = (frame == 0) ? "t = 0.00" : sprintf("t = %.2f", frame *    5.0000000000000003E-002 )
-     set title sprintf("Heat Equation in Rectangle - Time Evolution\\nt = %.2f s", frame *    5.0000000000000003E-002 ) font ",16"
+     t_label = (frame == 0) ? "t = 0.00" : sprintf("t = %.2f", frame *   0.14705882352941177      )
+     set title sprintf("Heat Equation in Rectangle - Time Evolution\\nt = %.2f s", frame *   0.14705882352941177      ) font ",16"
      splot filename using 1:2:3 with pm3d notitle
  }
  

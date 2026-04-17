@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(code *)",
+      "Bash(gfortran *)",
+      "Bash(./wave_equ)",
+      "Bash(ls *)",
+      "Bash(./wave_1d)"
+    ]
+  },
+  "$version": 3
+}
